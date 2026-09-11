@@ -1,10 +1,30 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { User, Calendar, ChevronRight } from 'lucide-react'
-import { USAGE_STATS } from '../../data/usageStats'
+import { fetchToiletsUsage } from '../../api/toilets'
 
 export default function UsageCard() {
   const navigate = useNavigate()
+  const [stats, setStats] = useState({ today: 0, monthly: 0 })
+
+  useEffect(() => {
+    let ignore = false
+
+    fetchToiletsUsage()
+      .then((usage) => {
+        if (!ignore) {
+          const today = usage.reduce((sum, u) => sum + (u.today_count ?? 0), 0)
+          const monthly = usage.reduce((sum, u) => sum + (u.month_count ?? 0), 0)
+          setStats({ today, monthly })
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   return (
     <Card>
@@ -27,14 +47,14 @@ export default function UsageCard() {
           <StatLabel>오늘 방문자</StatLabel>
           <StatValue>
             <User size={18} strokeWidth={2} />
-            {USAGE_STATS.today.toLocaleString()}명
+            {stats.today.toLocaleString()}명
           </StatValue>
         </StatBox>
         <StatBox>
           <StatLabel>월별 방문자</StatLabel>
           <StatValue>
             <Calendar size={18} strokeWidth={2} />
-            {USAGE_STATS.monthly.toLocaleString()}명
+            {stats.monthly.toLocaleString()}명
           </StatValue>
         </StatBox>
       </StatRow>
