@@ -1,50 +1,53 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import PrimaryButton from '../../components/PrimaryButton'
 import TextField from '../../components/TextField'
 import FormError from '../../components/FormError'
 import logo from '../../assets/images/qlean-logo.png'
+import { login } from '../../api/auth'
 
-// 백엔드 연동 전 임시 계정
-const MOCK_USER = {
-  id: 'qlean_user@qlean.com',
-  password: 'qlean1234',
+const ERROR_MESSAGES = {
+  MISSING_REQUIRED_FIELDS: '지자체 코드와 비밀번호를 모두 입력해주세요',
+  INVALID_CREDENTIALS: '지자체 코드 또는 비밀번호가 올바르지 않습니다',
+  ACCOUNT_DELETED: '삭제된 계정입니다',
 }
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [id, setId] = useState('')
+  const [localCode, setLocalCode] = useState('')
   const [password, setPassword] = useState('')
-  const [isError, setIsError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    if (!isLoading) return
-    const timer = setTimeout(() => navigate('/main'), 1000)
-    return () => clearTimeout(timer)
-  }, [isLoading, navigate])
-
-  const handleChangeId = (e) => {
-    setId(e.target.value)
-    if (isError) setIsError(false)
+  const handleChangeLocalCode = (e) => {
+    setLocalCode(e.target.value)
+    if (errorMessage) setErrorMessage('')
   }
 
   const handleChangePassword = (e) => {
     setPassword(e.target.value)
-    if (isError) setIsError(false)
+    if (errorMessage) setErrorMessage('')
   }
 
   const enableInput = (e) => {
     e.target.removeAttribute('readonly')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (id === MOCK_USER.id && password === MOCK_USER.password) {
-      setIsLoading(true)
-    } else {
-      setIsError(true)
+    setIsLoading(true)
+    try {
+      const token = await login(localCode, password)
+      localStorage.setItem('token', token)
+      navigate('/main')
+    } catch (err) {
+      const code =
+        err.response?.data?.error ||
+        err.response?.data?.code ||
+        err.response?.data?.message
+      setErrorMessage(ERROR_MESSAGES[code] || '로그인에 실패했습니다')
+      setIsLoading(false)
     }
   }
 
@@ -56,18 +59,18 @@ export default function LoginPage() {
 
       <LoginCard>
         <Title>Login</Title>
-        <SubTitle>Qlean의 아이디로 로그인</SubTitle>
+        <SubTitle>Qlean 지자체 코드로 로그인</SubTitle>
 
         <Fields onSubmit={handleSubmit} noValidate>
           <TextField
             type="text"
-            placeholder="이메일 또는 아이디"
-            value={id}
-            onChange={handleChangeId}
+            placeholder="지자체 코드를 입력해주세요"
+            value={localCode}
+            onChange={handleChangeLocalCode}
             onFocus={enableInput}
             autoComplete="off"
             readOnly
-            error={isError}
+            error={!!errorMessage}
           />
           <TextField
             type="password"
@@ -77,10 +80,10 @@ export default function LoginPage() {
             onFocus={enableInput}
             autoComplete="new-password"
             readOnly
-            error={isError}
+            error={!!errorMessage}
           />
 
-          {isError && <FormError>아이디 또는 비밀번호가 올바르지 않습니다</FormError>}
+          {errorMessage && <FormError>{errorMessage}</FormError>}
 
           <PrimaryButton type="submit" disabled={isLoading}>
             {isLoading ? '로그인 중...' : '로그인'}
