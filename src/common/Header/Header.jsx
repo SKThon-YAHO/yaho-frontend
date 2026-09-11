@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import qleanLogo from '../../assets/images/headerqlean-logo.png'
+import qleanLogo from '../../assets/images/headerqlean-logo.svg'
 
 export default function Header() {
   return (
@@ -7,7 +7,7 @@ export default function Header() {
       <Logo src={qleanLogo} alt="Qlean" />
     </Wrapper>
   )
-}
+}        
 
 const Wrapper = styled.header`
   width: 100%;
