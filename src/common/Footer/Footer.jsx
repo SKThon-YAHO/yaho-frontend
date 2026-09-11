@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import styled from 'styled-components'
-import { ClipboardCheck, House, User } from 'lucide-react'
+import { ShieldCheck, House, User } from 'lucide-react'
 
 const TABS = [
-  { label: '관리', path: '/report', Icon: ClipboardCheck },
+  { label: '관리', path: '/report', Icon: ShieldCheck },
   { label: '메인', path: '/main', Icon: House },
-  { label: 'My', path: '/my', Icon: User },
+  { label: '마이페이지', path: '/my', Icon: User },
 ]
 
 export default function Footer() {
@@ -24,7 +24,6 @@ export default function Footer() {
 const Wrapper = styled.footer`
   height: 64px;
   flex-shrink: 0;
-  border-top: 1px solid #e5e7eb;
   background-color: #ffffff;
   display: flex;
   user-select: none;
