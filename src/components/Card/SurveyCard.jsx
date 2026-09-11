@@ -1,15 +1,33 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { ChevronRight } from 'lucide-react'
 import DonutChart from '../Chart/DonutChart'
-import { SURVEY_ITEMS } from '../../data/surveyStats'
+import { fetchToiletsSurvey } from '../../api/toilets'
+import { mapAggregatedSurveyGroups, sumSurveyData } from '../../data/surveyDetail'
+import { buildSurveyItems } from '../../data/surveyStats'
 
 export default function SurveyCard() {
   const navigate = useNavigate()
+  const [surveyItems, setSurveyItems] = useState([])
+
+  useEffect(() => {
+    let ignore = false
+    fetchToiletsSurvey()
+      .then((list) => {
+        if (ignore) return
+        const combined = sumSurveyData(list.map((t) => t.survey))
+        const groups = mapAggregatedSurveyGroups(combined)
+        setSurveyItems(groups ? buildSurveyItems(groups) : [])
+      })
+      .catch(() => {})
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const { segments, topItems, totalCount } = useMemo(() => {
-    const sorted = [...SURVEY_ITEMS].sort((a, b) => b.count - a.count)
+    const sorted = [...surveyItems].sort((a, b) => b.count - a.count)
     const total = sorted.reduce((sum, item) => sum + item.count, 0)
     const withPercent = sorted.map((item) => ({
       ...item,
@@ -20,7 +38,7 @@ export default function SurveyCard() {
       topItems: withPercent.slice(0, 4),
       totalCount: sorted.length,
     }
-  }, [])
+  }, [surveyItems])
 
   return (
     <Card>

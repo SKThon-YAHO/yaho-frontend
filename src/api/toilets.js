@@ -9,3 +9,8 @@ export async function fetchToiletsUsage() {
   const { data } = await client.get('/api/users/toilets/usage')
   return data.data
 }
+
+export async function fetchToiletsSurvey() {
+  const { data } = await client.get('/api/users/toilets/survey')
+  return data.data
+}

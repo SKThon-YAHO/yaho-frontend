@@ -6,10 +6,10 @@ const SURVEY_GROUP_META = [
     cardBg: '#EFF6FF',
     cardBorder: '#BFDBFE',
     itemMeta: [
-      { label: '소변기', barColor: '#1E40AF' },
-      { label: '대변기', barColor: '#3B82F6' },
-      { label: '세면대', barColor: '#7DB7F8' },
-      { label: '바닥', barColor: '#BFDBFE' },
+      { label: '소변기', barColor: '#1E40AF', field: 'urinal' },
+      { label: '대변기', barColor: '#3B82F6', field: 'toilet' },
+      { label: '세면대', barColor: '#7DB7F8', field: 'sink' },
+      { label: '바닥', barColor: '#BFDBFE', field: 'floor' },
     ],
   },
   {
@@ -19,10 +19,10 @@ const SURVEY_GROUP_META = [
     cardBg: '#F0FDF4',
     cardBorder: '#BBF7D0',
     itemMeta: [
-      { label: '소변기', barColor: '#166534' },
-      { label: '문', barColor: '#22C55E' },
-      { label: '세면대', barColor: '#6EE7A0' },
-      { label: '대변기', barColor: '#BBF7D0' },
+      { label: '소변기', barColor: '#166534', field: 'urinal' },
+      { label: '문', barColor: '#22C55E', field: 'door' },
+      { label: '세면대', barColor: '#6EE7A0', field: 'sink' },
+      { label: '대변기', barColor: '#BBF7D0', field: 'toilet' },
     ],
   },
   {
@@ -32,14 +32,21 @@ const SURVEY_GROUP_META = [
     cardBg: '#FEFCE8',
     cardBorder: '#FEF08A',
     itemMeta: [
-      { label: '손세정제', barColor: '#A16207' },
-      { label: '휴지', barColor: '#FBBF24' },
-      { label: '휴지통', barColor: '#FDE68A' },
+      { label: '손세정제', barColor: '#A16207', field: 'soap' },
+      { label: '휴지', barColor: '#FBBF24', field: 'paper' },
+      { label: '휴지통', barColor: '#FDE68A', field: 'trash' },
     ],
   },
 ]
 
-// 화장실 id별 더미 카운트 (백엔드 연동 전 임시 데이터)
+// 더미 그룹 key -> 실제 API(survey) 응답의 그룹 key 매핑
+const API_GROUP_KEY = {
+  clean: 'clean',
+  damage: 'break',
+  supply: 'item',
+}
+
+// 화장실 id별 더미 카운트 (API 로딩 실패 시 fallback용으로만 유지)
 const SURVEY_COUNTS_BY_RESTROOM = {
   1: { clean: [30, 26, 20, 16], damage: [28, 22, 18, 14], supply: [16, 10, 6] },
   2: { clean: [23, 20, 15, 12], damage: [21, 17, 14, 11], supply: [12, 8, 5] },
@@ -72,19 +79,47 @@ function buildGroups(getCount) {
   }))
 }
 
-// 화장실 하나의 설문 데이터
-export function getSurveyGroups(restroomId) {
-  const counts = SURVEY_COUNTS_BY_RESTROOM[restroomId]
-  if (!counts) return getAggregatedSurveyGroups()
-  return buildGroups((groupKey, index) => counts[groupKey][index])
-}
-
-// 지자체(구) 전체 화장실 합산 데이터 — 화장실 선택 안 했을 때 기본값
+// 더미 fallback (API 로딩 실패 시에만 사용)
 export function getAggregatedSurveyGroups() {
   return buildGroups((groupKey, index) =>
     RESTROOM_IDS.reduce((sum, id) => sum + SURVEY_COUNTS_BY_RESTROOM[id][groupKey][index], 0)
   )
 }
 
-// 기존 코드 호환용 (지자체 전체 기준 기본값)
-export const SURVEY_GROUPS = getAggregatedSurveyGroups()
+// 실제 API의 survey 객체({clean, break, item})를 화면용 그룹 구조로 변환
+// (화장실 하나의 survey를 넣으면 그 화장실 데이터, 합산된 survey를 넣으면 종합 데이터)
+export function mapAggregatedSurveyGroups(surveyData) {
+  if (!surveyData) return null
+  return SURVEY_GROUP_META.map((group) => {
+    const apiKey = API_GROUP_KEY[group.key]
+    const counts = surveyData[apiKey] || {}
+    return {
+      key: group.key,
+      label: group.label,
+      color: group.color,
+      cardBg: group.cardBg,
+      cardBorder: group.cardBorder,
+      items: group.itemMeta.map((item) => ({
+        label: item.label,
+        barColor: item.barColor,
+        count: counts[item.field] ?? 0,
+      })),
+    }
+  })
+}
+
+// 화장실별 survey 객체 배열을 하나로 합산 (지자체 종합 계산용)
+export function sumSurveyData(surveyList) {
+  const groupKeys = ['clean', 'break', 'item']
+  const result = { clean: {}, break: {}, item: {} }
+  surveyList.forEach((survey) => {
+    if (!survey) return
+    groupKeys.forEach((groupKey) => {
+      const fields = survey[groupKey] || {}
+      Object.keys(fields).forEach((field) => {
+        result[groupKey][field] = (result[groupKey][field] || 0) + fields[field]
+      })
+    })
+  })
+  return result
+}
