@@ -21,7 +21,12 @@ export default function AiRecommendCard() {
 
   if (!insight) return null
 
-  const translated = translateFieldKeys(insight.insight)
+  const cleaned = insight.insight
+    .replace(/\\n/g, '\n')
+    .replace(/`/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
+  const translated = translateFieldKeys(cleaned)
   const parts = translated.split(/(\{[^}]*\})/g).filter(Boolean)
 
   return (
@@ -67,6 +72,7 @@ const Body = styled.p`
   font-weight: 400;
   line-height: 24px;
   word-break: keep-all;
+  white-space: pre-line;
 `
 
 const Highlight = styled.span`
