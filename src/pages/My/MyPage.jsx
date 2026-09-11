@@ -9,10 +9,10 @@ export default function MyPage() {
     <PageContainer>
       <PageTitle>마이페이지</PageTitle>
 
-      <ProfileSection name="홍길동" />
+      <ProfileSection name="서경대학교" />
 
       <Content>
-        <InfoCard region="서울특별시 강남구" password="••••••" />
+        <InfoCard region="서울특별시 성북구" password="••••••" />
 
         <SettingButton>지자체 변경</SettingButton>
 
