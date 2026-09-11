@@ -1,25 +1,28 @@
 export const BASE_RATE = 337
-export const EXCESS_RATE = 117
-export const BASE_THRESHOLD = 100
+export const PENALTY_RATE = 137
+export const SURVEY_THRESHOLD = 100
 
-// 화장실별 정산 원본 데이터 (백엔드 연동 전 임시)
-export const RESTROOM_SETTLEMENTS = [
-  { id: 'A', name: 'A 화장실', totalCount: 85 },
-  { id: 'B', name: 'B 화장실', totalCount: 130 },
-  { id: 'C', name: 'C 화장실', totalCount: 152 },
-]
+// 화장실 하나의 survey 객체({clean, break, item})에서 전체 설문 제기 건수 합산
+export function sumSurveyCount(survey) {
+  if (!survey) return 0
+  const groupKeys = ['clean', 'break', 'item']
+  return groupKeys.reduce((sum, groupKey) => {
+    const fields = survey[groupKey] || {}
+    return sum + Object.values(fields).reduce((s, v) => s + v, 0)
+  }, 0)
+}
 
-export function computeSettlement(totalCount) {
-  const baseCount = Math.min(totalCount, BASE_THRESHOLD)
-  const excessCount = Math.max(totalCount - BASE_THRESHOLD, 0)
-  const baseAmount = baseCount * BASE_RATE
-  const excessAmount = excessCount * EXCESS_RATE
+// 화장실 하나의 정산 계산
+// 그 달 설문 건수가 SURVEY_THRESHOLD 이상이면 전체 이용자 수를 PENALTY_RATE로,
+// 미만이면 BASE_RATE로 계산 (구간 분리 없이 화장실 단위로 단가 자체가 바뀜)
+export function computeSettlement(totalCount, surveyCount) {
+  const isFlagged = surveyCount >= SURVEY_THRESHOLD
+  const rate = isFlagged ? PENALTY_RATE : BASE_RATE
   return {
-    baseCount,
-    excessCount,
-    baseAmount,
-    excessAmount,
-    totalAmount: baseAmount + excessAmount,
+    rate,
+    isFlagged,
+    surveyCount,
+    totalAmount: totalCount * rate,
   }
 }
 

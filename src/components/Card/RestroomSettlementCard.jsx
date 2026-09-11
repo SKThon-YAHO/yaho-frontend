@@ -1,17 +1,14 @@
 import styled from 'styled-components'
-import { BASE_RATE, EXCESS_RATE } from '../../data/settlementDetail'
+import { BASE_RATE, PENALTY_RATE, SURVEY_THRESHOLD } from '../../data/settlementDetail'
 
 export default function RestroomSettlementCard({
   name,
   totalCount,
-  baseCount,
-  excessCount,
-  baseAmount,
-  excessAmount,
+  surveyCount,
+  rate,
+  isFlagged,
   totalAmount,
 }) {
-  const hasExcess = excessCount > 0
-
   return (
     <Card>
       <HeaderRow>
@@ -25,25 +22,21 @@ export default function RestroomSettlementCard({
       <DetailBox>
         <DetailRow>
           <Left>
-            <Badge $variant="base">기본</Badge>
+            <Badge $variant={isFlagged ? 'excess' : 'base'}>
+              {isFlagged ? '설문 경고' : '정상'}
+            </Badge>
             <Label>
-              {BASE_RATE.toLocaleString()}원 × {baseCount}건
+              {rate.toLocaleString()}원 × {totalCount}건
             </Label>
           </Left>
-          <Amount>{baseAmount.toLocaleString()}원</Amount>
+          <Amount>{totalAmount.toLocaleString()}원</Amount>
         </DetailRow>
 
-        <DetailRow>
-          <Left>
-            <Badge $variant={hasExcess ? 'excess' : 'excessDisabled'}>초과</Badge>
-            <Label $muted={!hasExcess}>
-              {EXCESS_RATE.toLocaleString()}원 × {excessCount}건
-            </Label>
-          </Left>
-          <Amount $muted={!hasExcess}>
-            {hasExcess ? `${excessAmount.toLocaleString()}원` : '—'}
-          </Amount>
-        </DetailRow>
+        {isFlagged && (
+          <WarningText>
+            이번 달 설문 {surveyCount}회 제기 (기준 {SURVEY_THRESHOLD}회 이상) — 단가 {BASE_RATE}원 → {PENALTY_RATE}원 적용
+          </WarningText>
+        )}
       </DetailBox>
     </Card>
   )
@@ -126,13 +119,12 @@ const Badge = styled.span`
   font-family: Inter;
   font-weight: 700;
   line-height: 15px;
-  background-color: ${({ $variant }) =>
-    $variant === 'base' ? '#6B35D0' : $variant === 'excess' ? '#A78BFA' : '#E2E8F0'};
-  color: ${({ $variant }) => ($variant === 'excessDisabled' ? '#94A3B8' : '#ffffff')};
+  background-color: ${({ $variant }) => ($variant === 'excess' ? '#DC2626' : '#6B35D0')};
+  color: #ffffff;
 `
 
 const Label = styled.span`
-  color: ${({ $muted }) => ($muted ? '#94a3b8' : '#1e293b')};
+  color: #1e293b;
   font-size: 13px;
   font-family: Inter;
   font-weight: 600;
@@ -140,9 +132,18 @@ const Label = styled.span`
 `
 
 const Amount = styled.span`
-  color: ${({ $muted }) => ($muted ? '#94a3b8' : '#1e293b')};
+  color: #1e293b;
   font-size: 13px;
   font-family: Inter;
   font-weight: 800;
   line-height: 19.5px;
+`
+
+const WarningText = styled.p`
+  margin: 0;
+  color: #dc2626;
+  font-size: 11px;
+  font-family: Inter;
+  font-weight: 600;
+  line-height: 16.5px;
 `

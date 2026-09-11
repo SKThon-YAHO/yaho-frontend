@@ -1,10 +1,43 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { ChevronRight, AlertCircle } from 'lucide-react'
-import { SETTLEMENT } from '../../data/settlement'
+import { fetchToilets, fetchToiletsUsage, fetchToiletsSurvey } from '../../api/toilets'
+import { computeSettlement, sumSurveyCount } from '../../data/settlementDetail'
 
 export default function SettlementCard() {
   const navigate = useNavigate()
+  const [summary, setSummary] = useState({ amount: 0, unitPrice: 0, count: 0 })
+
+  useEffect(() => {
+    let ignore = false
+    Promise.all([fetchToilets(), fetchToiletsUsage(), fetchToiletsSurvey()])
+      .then(([toiletList, usageList, surveyList]) => {
+        if (ignore) return
+        const usageByCode = new Map(usageList.map((u) => [u.toilet_code, u.month_count]))
+        const surveyByCode = new Map(surveyList.map((s) => [s.toilet_code, s.survey]))
+
+        let totalAmount = 0
+        let totalCount = 0
+        toiletList.forEach((t) => {
+          const count = usageByCode.get(t.toilet_code) ?? 0
+          const surveyCount = sumSurveyCount(surveyByCode.get(t.toilet_code))
+          const { totalAmount: amount } = computeSettlement(count, surveyCount)
+          totalAmount += amount
+          totalCount += count
+        })
+
+        setSummary({
+          amount: totalAmount,
+          unitPrice: totalCount > 0 ? Math.round(totalAmount / totalCount) : 0,
+          count: totalCount,
+        })
+      })
+      .catch(() => {})
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   return (
     <Card>
@@ -21,18 +54,18 @@ export default function SettlementCard() {
 
       <Body>
         <Amount>
-          {SETTLEMENT.amount.toLocaleString()}
+          {summary.amount.toLocaleString()}
           <Unit>원</Unit>
         </Amount>
 
         <StatRow>
           <StatBox>
             <StatLabel>건당 단가</StatLabel>
-            <StatValue>{SETTLEMENT.unitPrice.toLocaleString()}원</StatValue>
+            <StatValue>{summary.unitPrice.toLocaleString()}원</StatValue>
           </StatBox>
           <StatBox>
             <StatLabel>청소 건수</StatLabel>
-            <StatValue>{SETTLEMENT.count.toLocaleString()}건</StatValue>
+            <StatValue>{summary.count.toLocaleString()}건</StatValue>
           </StatBox>
         </StatRow>
 
