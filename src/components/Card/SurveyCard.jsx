@@ -79,7 +79,7 @@ export default function SurveyCard() {
 }
 
 const Card = styled.div`
-  width: 330px;
+  width: 100%;
   flex: 1;
   border-radius: 14px;
   border: 1.5px solid #bbf7d0;
