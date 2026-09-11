@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { ChevronLeft } from 'lucide-react'
@@ -6,24 +6,53 @@ import SearchBar from '../../components/SearchBar'
 import RestroomDropdown from '../../components/Search/RestroomDropdown'
 import DonutChart from '../../components/Chart/DonutChart'
 import SurveyGroupCard from '../../components/Card/SurveyGroupCard'
-import { getSurveyGroups, getAggregatedSurveyGroups } from '../../data/surveyDetail'
-import { RESTROOMS } from '../../data/restrooms'
+import {
+  getAggregatedSurveyGroups,
+  mapAggregatedSurveyGroups,
+  sumSurveyData,
+} from '../../data/surveyDetail'
+import { fetchToilets, fetchToiletsSurvey } from '../../api/toilets'
 
 export default function ManagePage() {
   const navigate = useNavigate()
   const [selectedId, setSelectedId] = useState(null)
   const [keyword, setKeyword] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [restrooms, setRestrooms] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const selectedRestroom = selectedId ? RESTROOMS.find((r) => r.id === selectedId) : null
+  useEffect(() => {
+    let ignore = false
+    Promise.all([fetchToilets(), fetchToiletsSurvey()])
+      .then(([toiletList, surveyList]) => {
+        if (ignore) return
+        const surveyByCode = new Map(surveyList.map((t) => [t.toilet_code, t.survey]))
+        const merged = toiletList.map((t) => ({
+          id: t.toilet_code,
+          name: t.name,
+          address: t.locate,
+          survey: surveyByCode.get(t.toilet_code) || null,
+        }))
+        setRestrooms(merged)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!ignore) setIsLoading(false)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  const selectedRestroom = selectedId ? restrooms.find((r) => r.id === selectedId) : null
 
   const filteredRestrooms = useMemo(() => {
     const q = keyword.trim()
-    if (!q) return RESTROOMS
-    return RESTROOMS.filter(
-      (item) => item.name.includes(q) || item.address.includes(q)
+    if (!q) return restrooms
+    return restrooms.filter(
+      (item) => item.name.includes(q) || (item.address ?? '').includes(q)
     )
-  }, [keyword])
+  }, [keyword, restrooms])
 
   const handleFocus = () => {
     setKeyword('')
@@ -48,7 +77,14 @@ export default function ManagePage() {
   }
 
   const { groups, segments, totalItemCount } = useMemo(() => {
-    const surveyGroups = selectedId ? getSurveyGroups(selectedId) : getAggregatedSurveyGroups()
+    let surveyData = null
+    if (selectedRestroom) {
+      surveyData = selectedRestroom.survey
+    } else if (restrooms.length > 0) {
+      surveyData = sumSurveyData(restrooms.map((r) => r.survey))
+    }
+
+    const surveyGroups = mapAggregatedSurveyGroups(surveyData) || getAggregatedSurveyGroups()
 
     const grandTotal = surveyGroups.reduce(
       (sum, group) => sum + group.items.reduce((s, item) => s + item.count, 0),
@@ -83,7 +119,7 @@ export default function ManagePage() {
       ),
       totalItemCount: itemCount,
     }
-  }, [selectedId])
+  }, [selectedRestroom, restrooms])
 
   return (
     <Page>
@@ -117,32 +153,38 @@ export default function ManagePage() {
 
       {!selectedRestroom && <ScopeLabel>지자체 종합 데이터</ScopeLabel>}
 
-      <Summary>
-        <DonutChart segments={segments} centerValue={`${totalItemCount}개`} centerLabel="항목" />
-        <Legend>
-          {groups.map((group) => (
-            <LegendRow key={group.key}>
-              <Dot $color={group.color} />
-              <LegendLabel>{group.label}</LegendLabel>
-              <LegendPercent>{group.percent}%</LegendPercent>
-            </LegendRow>
-          ))}
-        </Legend>
-      </Summary>
+      {isLoading ? (
+        <Empty>불러오는 중...</Empty>
+      ) : (
+        <>
+          <Summary>
+            <DonutChart segments={segments} centerValue={`${totalItemCount}개`} centerLabel="항목" />
+            <Legend>
+              {groups.map((group) => (
+                <LegendRow key={group.key}>
+                  <Dot $color={group.color} />
+                  <LegendLabel>{group.label}</LegendLabel>
+                  <LegendPercent>{group.percent}%</LegendPercent>
+                </LegendRow>
+              ))}
+            </Legend>
+          </Summary>
 
-      <GroupList>
-        {groups.map((group) => (
-          <SurveyGroupCard
-            key={group.key}
-            label={group.label}
-            count={group.count}
-            color={group.color}
-            cardBg={group.cardBg}
-            cardBorder={group.cardBorder}
-            items={group.items}
-          />
-        ))}
-      </GroupList>
+          <GroupList>
+            {groups.map((group) => (
+              <SurveyGroupCard
+                key={group.key}
+                label={group.label}
+                count={group.count}
+                color={group.color}
+                cardBg={group.cardBg}
+                cardBorder={group.cardBorder}
+                items={group.items}
+              />
+            ))}
+          </GroupList>
+        </>
+      )}
     </Page>
   )
 }
@@ -178,6 +220,13 @@ const ScopeLabel = styled.span`
   font-size: 12px;
   font-weight: 600;
   padding-left: 6px;
+`
+
+const Empty = styled.div`
+  padding: 40px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
 `
 
 const Summary = styled.div`
