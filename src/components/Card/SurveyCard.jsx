@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { ChevronRight } from 'lucide-react'
 import DonutChart from '../Chart/DonutChart'
-import { SURVEY_ITEMS, CHART_COLORS } from '../../data/surveyStats'
+import { SURVEY_ITEMS } from '../../data/surveyStats'
 
 export default function SurveyCard() {
   const navigate = useNavigate()
@@ -11,10 +11,9 @@ export default function SurveyCard() {
   const { segments, topItems, totalCount } = useMemo(() => {
     const sorted = [...SURVEY_ITEMS].sort((a, b) => b.count - a.count)
     const total = sorted.reduce((sum, item) => sum + item.count, 0)
-    const withPercent = sorted.map((item, index) => ({
+    const withPercent = sorted.map((item) => ({
       ...item,
       percent: total === 0 ? 0 : Math.round((item.count / total) * 100),
-      color: CHART_COLORS[index % CHART_COLORS.length],
     }))
     return {
       segments: withPercent,
