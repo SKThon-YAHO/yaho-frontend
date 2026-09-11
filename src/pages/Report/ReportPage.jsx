@@ -7,6 +7,12 @@ import { fetchToilets } from '../../api/toilets'
 import { postCleaning } from '../../api/manage'
 import { REPORT_GROUPS, buildCleaningTypePayload } from '../../data/reportIssues'
 
+const createInitialGroups = () =>
+  REPORT_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.map((item) => ({ ...item })),
+  }))
+
 export default function ReportPage() {
   const [keyword, setKeyword] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -18,12 +24,7 @@ export default function ReportPage() {
   const submitTokenRef = useRef(0)
   const toastTimeoutRef = useRef(null)
 
-  const [groups, setGroups] = useState(() =>
-    REPORT_GROUPS.map((group) => ({
-      ...group,
-      items: group.items.map((item) => ({ ...item })),
-    }))
-  )
+  const [groups, setGroups] = useState(createInitialGroups)
 
   useEffect(() => {
     let ignore = false
@@ -76,6 +77,7 @@ export default function ReportPage() {
     setKeyword(item.name)
     setIsOpen(false)
     resetSubmitState()
+    setGroups(createInitialGroups())
   }
 
   const handleSelectAll = () => {
@@ -83,6 +85,7 @@ export default function ReportPage() {
     setKeyword('')
     setIsOpen(false)
     resetSubmitState()
+    setGroups(createInitialGroups())
   }
 
   const toggleItem = (groupKey, itemId) => {
