@@ -64,8 +64,8 @@ export default function SettlementCard() {
             <StatValue>{summary.unitPrice.toLocaleString()}원</StatValue>
           </StatBox>
           <StatBox>
-            <StatLabel>청소 건수</StatLabel>
-            <StatValue>{summary.count.toLocaleString()}건</StatValue>
+            <StatLabel>방문자 수</StatLabel>
+            <StatValue>{summary.count.toLocaleString()}명</StatValue>
           </StatBox>
         </StatRow>
 

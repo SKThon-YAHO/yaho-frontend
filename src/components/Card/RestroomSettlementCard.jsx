@@ -12,11 +12,11 @@ export default function RestroomSettlementCard({
   return (
     <Card>
       <HeaderRow>
-        <TitleGroup>
-          <Name>{name}</Name>
+        <Name>{name}</Name>
+        <MetaRow>
           <CountBadge>총 {totalCount}건</CountBadge>
-        </TitleGroup>
-        <TotalAmount>{totalAmount.toLocaleString()}원</TotalAmount>
+          <TotalAmount>{totalAmount.toLocaleString()}원</TotalAmount>
+        </MetaRow>
       </HeaderRow>
 
       <DetailBox>
@@ -34,7 +34,12 @@ export default function RestroomSettlementCard({
 
         {isFlagged && (
           <WarningText>
-            이번 달 설문 {surveyCount}회 제기 (기준 {SURVEY_THRESHOLD}회 이상) — 단가 {BASE_RATE}원 → {PENALTY_RATE}원 적용
+            <WarningLine>
+              이번 달 설문 {surveyCount}회 제기 (기준 {SURVEY_THRESHOLD}회 이상)
+            </WarningLine>
+            <WarningLine>
+              단가 {BASE_RATE}원 → {PENALTY_RATE}원 적용
+            </WarningLine>
           </WarningText>
         )}
       </DetailBox>
@@ -53,14 +58,15 @@ const Card = styled.div`
 const HeaderRow = styled.div`
   padding: 12px 14px 10px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
 `
 
-const TitleGroup = styled.div`
+const MetaRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 8px;
 `
 
 const Name = styled.span`
@@ -80,6 +86,7 @@ const CountBadge = styled.span`
   font-family: Inter;
   font-weight: 600;
   line-height: 15px;
+  white-space: nowrap;
 `
 
 const TotalAmount = styled.span`
@@ -88,6 +95,7 @@ const TotalAmount = styled.span`
   font-family: Inter;
   font-weight: 800;
   line-height: 22.5px;
+  white-space: nowrap;
 `
 
 const DetailBox = styled.div`
@@ -139,8 +147,13 @@ const Amount = styled.span`
   line-height: 19.5px;
 `
 
-const WarningText = styled.p`
-  margin: 0;
+const WarningText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`
+
+const WarningLine = styled.span`
   color: #dc2626;
   font-size: 11px;
   font-family: Inter;
