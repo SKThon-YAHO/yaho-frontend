@@ -1,29 +1,23 @@
-import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
-import MenuCard from '../../components/Card/MenuCard'
-
-const MENUS = [
-  { title: '이용현황', path: '/usage' },
-  { title: '설문현황', path: '/manage' },
-  { title: '정산', path: '/calculate' },
-]
+import UsageCard from '../../components/Card/UsageCard'
+import SurveyCard from '../../components/Card/SurveyCard'
+import SettlementCard from '../../components/Card/SettlementCard'
 
 export default function MainPage() {
-  const navigate = useNavigate()
-
   return (
     <CardList>
-      {MENUS.map((menu) => (
-        <MenuCard key={menu.path} title={menu.title} onClick={() => navigate(menu.path)} />
-      ))}
+      <UsageCard />
+      <SurveyCard />
+      <SettlementCard />
     </CardList>
   )
 }
 
 const CardList = styled.div`
   flex: 1;
-  padding: 12px 24px 32px;
+  min-height: 0;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 `

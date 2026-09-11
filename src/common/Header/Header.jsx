@@ -1,18 +1,17 @@
 import styled from 'styled-components'
-import logo from '../../assets/images/qlean-logo.png'
+import qleanLogo from '../../assets/images/headerqlean-logo.png'
 
 export default function Header() {
   return (
     <Wrapper>
-      <Logo src={logo} alt="Qlean" />
+      <Logo src={qleanLogo} alt="Qlean" />
     </Wrapper>
   )
 }
 
 const Wrapper = styled.header`
-  height: 72px;
-  padding: 16px 16px 0;
-  flex-shrink: 0;
+  width: 100%;
+  padding: 20px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,6 +19,6 @@ const Wrapper = styled.header`
 `
 
 const Logo = styled.img`
-  height: 28px;
+  height: 40px;
   width: auto;
 `
