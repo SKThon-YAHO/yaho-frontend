@@ -41,6 +41,10 @@ const Tab = styled(NavLink)`
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 
+  &:hover {
+    color: #111827;
+  }
+
   &.active {
     color: #111827;
   }
