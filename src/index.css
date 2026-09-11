@@ -18,3 +18,13 @@ input,
 button {
   font: inherit;
 }
+
+/* 스크롤은 유지하되 스크롤바는 전역에서 숨김 */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
