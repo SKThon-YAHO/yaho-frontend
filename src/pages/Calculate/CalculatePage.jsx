@@ -1,22 +1,49 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 import { ChevronLeft, AlertCircle } from 'lucide-react'
 import RestroomSettlementCard from '../../components/Card/RestroomSettlementCard'
 import {
-  RESTROOM_SETTLEMENTS,
   computeSettlement,
+  sumSurveyCount,
   getNextSettlementDate,
 } from '../../data/settlementDetail'
+import { fetchToilets, fetchToiletsUsage, fetchToiletsSurvey } from '../../api/toilets'
 
 export default function CalculatePage() {
   const navigate = useNavigate()
   const now = new Date()
+  const [rawData, setRawData] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let ignore = false
+    Promise.all([fetchToilets(), fetchToiletsUsage(), fetchToiletsSurvey()])
+      .then(([toiletList, usageList, surveyList]) => {
+        if (ignore) return
+        const usageByCode = new Map(usageList.map((u) => [u.toilet_code, u.month_count]))
+        const surveyByCode = new Map(surveyList.map((s) => [s.toilet_code, s.survey]))
+        const merged = toiletList.map((t) => ({
+          id: t.toilet_code,
+          name: t.name,
+          totalCount: usageByCode.get(t.toilet_code) ?? 0,
+          surveyCount: sumSurveyCount(surveyByCode.get(t.toilet_code)),
+        }))
+        setRawData(merged)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!ignore) setIsLoading(false)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const { restrooms, summary } = useMemo(() => {
-    const computed = RESTROOM_SETTLEMENTS.map((restroom) => ({
+    const computed = rawData.map((restroom) => ({
       ...restroom,
-      ...computeSettlement(restroom.totalCount),
+      ...computeSettlement(restroom.totalCount, restroom.surveyCount),
     }))
 
     const totalAmount = computed.reduce((sum, r) => sum + r.totalAmount, 0)
@@ -31,7 +58,7 @@ export default function CalculatePage() {
         nextDate: getNextSettlementDate(),
       },
     }
-  }, [])
+  }, [rawData])
 
   return (
     <Page>
@@ -63,7 +90,7 @@ export default function CalculatePage() {
             <StatValue>{summary.restroomCount}개소</StatValue>
           </StatBox>
           <StatBox>
-            <StatLabel>총 청소 건수</StatLabel>
+            <StatLabel>총 이용 건수</StatLabel>
             <StatValue>{summary.totalCount}건</StatValue>
           </StatBox>
           <StatBox>
@@ -73,11 +100,15 @@ export default function CalculatePage() {
         </StatRow>
       </SummaryCard>
 
-      <CardList>
-        {restrooms.map((restroom) => (
-          <RestroomSettlementCard key={restroom.id} {...restroom} />
-        ))}
-      </CardList>
+      {isLoading ? (
+        <Empty>불러오는 중...</Empty>
+      ) : (
+        <CardList>
+          {restrooms.map((restroom) => (
+            <RestroomSettlementCard key={restroom.id} {...restroom} />
+          ))}
+        </CardList>
+      )}
 
       <Notice>
         <AlertCircle size={13} strokeWidth={2} color="#B09ED8" />
@@ -186,6 +217,13 @@ const StatValue = styled.span`
   font-family: Inter;
   font-weight: 700;
   line-height: 18px;
+`
+
+const Empty = styled.div`
+  padding: 40px 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
 `
 
 const CardList = styled.div`
