@@ -2,6 +2,7 @@ import styled from 'styled-components'
 import UsageCard from '../../components/Card/UsageCard'
 import SurveyCard from '../../components/Card/SurveyCard'
 import SettlementCard from '../../components/Card/SettlementCard'
+import AiRecommendCard from '../../components/Card/AiRecommendCard'
 
 export default function MainPage() {
   return (
@@ -9,6 +10,7 @@ export default function MainPage() {
       <UsageCard />
       <SurveyCard />
       <SettlementCard />
+      <AiRecommendCard />
     </CardList>
   )
 }
